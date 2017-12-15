@@ -12,6 +12,7 @@ Strategia (µ+λ) - z populacji (µ+λ) wybieramy µ najlepszych osobników, λ 
 '''
 import numpy as np
 import random
+import math
 import matplotlib.pyplot as plt
 from pop import Invid
 
@@ -75,54 +76,105 @@ class Genetic:
                     else:
                         self.dist_matrix[ind1][ind2] = self.calc_dist(item1, item2)
 
-    def start_algorithm(self, start_pop=10, no_of_gen=1000):
+    def start_algorithm(self, start_pop=10, no_of_gen=1000, mutation=0.05):
         """
         strategia ewolucyjna narazie tylko dla odległości pomiędzy miastami
-
-        :param matrix:
-
+        :param mutation:
+        :param start_pop:
+        :param no_of_gen:
         :return:
         """
         liczba_osobnikow = start_pop
         liczba_pokolen = no_of_gen
         populacja = []
-        min = 999999999
+        lenght = len(self.c_dist)
+        self.min = 999999999
         self.min_ciag = None
         for i in range(liczba_osobnikow):
             populacja.append(Invid())
             populacja[i].generate(len(self.dist_matrix))
             populacja[i].calculate_distance(self.dist_matrix)
         while liczba_pokolen > 0:
-            # print(liczba_pokolen)
+            if liczba_pokolen % 10 == 0:
+                print(liczba_pokolen)
             ############################################
             #               KRZYŻOWANIE
-            # dziecko = []
-            # krzyzowanie = random.choices(populacja, k=2)
-            # start = krzyzowanie[0] if random.random() > 0.5 else krzyzowanie[1]
-            # random_city = random.randint(1, 47)
-            # dziecko.append(start.param_values[random_city])
-            # min = random_city - 1
-            # max = random_city + 1
-            # neigh = [krzyzowanie[0].param_values[min], krzyzowanie[1].param_values[min],
-            #          krzyzowanie[0].param_values[max], krzyzowanie[1].param_values[max]]
-            # dist_vector = [matrix[dziecko[0]][i] for i in neigh if i not in dziecko]
+            childrens = []
+            copy_pop = np.copy(populacja)
+            for _ in range(math.floor(len(populacja)/2)):
+                dziecko = []
+                nums = random.sample(range(0, len(copy_pop)), k=2)
+                krzyzowanie = [copy_pop[nums[0]], copy_pop[nums[1]]]
+                copy_pop = np.delete(copy_pop, nums)
+                # wyznacz jednego losowego rodzica
+                start = krzyzowanie[0] if random.random() > 0.5 else krzyzowanie[1]
+                random_city = random.randint(0, lenght-1)
+                param = start.param_values[random_city]
+                # dodaj losowe miasto z jego ścieżki jako pierwszy element
+                dziecko.append(param)
+                for i in range(47):
+                    val1 = krzyzowanie[0].param_values.index(param)
+                    val2 = krzyzowanie[1].param_values.index(param)
+                    min1 = val1 - 1
+                    if min1 < 0:
+                        min1 = lenght - 1  # ostatni element
+                    max1 = val1 + 1
+                    if max1 > lenght - 1:
+                        max1 = 0
+                    min2 = val2 - 1
+                    if min2 < 0:
+                        min2 = lenght - 1
+                    max2 = val2 + 1
+                    if max2 > lenght - 1:
+                        max2 = 0
+                    # sprawdź poprawność
+                    values = [min1, min2, max1, max2]
+                    neigh = [krzyzowanie[0].param_values[min1], krzyzowanie[1].param_values[min2],
+                             krzyzowanie[0].param_values[max1], krzyzowanie[1].param_values[max2]]
+                    dist_vector = [self.dist_matrix[dziecko[i]][j] for j in neigh]
+                    values, dist_vector = (list(x) for x in zip(*sorted(zip(values, dist_vector), key=lambda pair: pair[1])))
+                    found = False
+                    for j in range(len(dist_vector)):
+                        if values[j] not in dziecko:
+                            param = values[j]
+                            dziecko.append(param)
+                            found = True
+                            break
+                    if not found:
+                        # znajdź najbliższe możliwe miasto
+                        search = [j for j in range(lenght) if j not in dziecko]
+                        min = 999999999999999
+                        min_index = -1
+                        for j in search:
+                            if self.dist_matrix[dziecko[i]][j] < min:
+                                min = self.dist_matrix[dziecko[i]][j]
+                                min_index = j
+                        param = min_index
+                        dziecko.append(param)
+                childrens.append(Invid(dziecko))
+            for child in childrens:
+                populacja.append(child)
             ############################################
             #                 MUTACJA
             for inv in populacja:
-                inv.mutation()
+                if random.random() < mutation:
+                    inv.mutation()
                 inv.calculate_distance(self.dist_matrix)
-                if min > inv.distance:
-                    min = inv.distance
+                if self.min > inv.distance:
+                    self.min = inv.distance
                     self.min_ciag = inv.param_values
             ############################################
             #           SELEKCJA & REDUKCJA
             # posortuj według dystansu
-            # wypierdol najgorszych, aby zostało 10 osobników
-
+            # wyrzuć najgorszych
+            populacja.sort(reverse=True)
+            for _ in range(len(childrens)):
+                populacja.pop(0)
             ############################################
             liczba_pokolen -= 1
 
     def plot_result(self):
+        print(self.min)
         plt.figure()
         for point in self.c_dist:
             plt.plot(point[0], point[1], 'ko')
@@ -130,11 +182,14 @@ class Genetic:
             x = [self.c_dist[self.min_ciag[i]][0], self.c_dist[self.min_ciag[i+1]][0]]
             y = [self.c_dist[self.min_ciag[i]][1], self.c_dist[self.min_ciag[i + 1]][1]]
             plt.plot(x, y, "r-")
+        x = [self.c_dist[self.min_ciag[len(self.min_ciag)-1]][0], self.c_dist[self.min_ciag[0]][0]]
+        y = [self.c_dist[self.min_ciag[len(self.min_ciag)-1]][1], self.c_dist[self.min_ciag[0]][1]]
+        plt.plot(x, y, "r-")
         plt.show()
 
 
 if __name__ == "__main__":
     gen = Genetic("data\\city_names.txt", "data\\city_xy.txt")
-    gen.start_algorithm(40, 5000)
+    gen.start_algorithm(100, 5000)
     gen.plot_result()
 

@@ -2,11 +2,19 @@ import random
 
 
 class Invid:
-    def __init__(self):
-        self.param_values = []
+    def __init__(self, init_state=None):
+        if init_state is None:
+            self.param_values = []
+        else:
+            self.param_values = init_state
         self.real_value = 0
         self.distance = 0
-        self.first_city = True
+
+    def __lt__(self, other):
+        return self.distance < other.distance
+
+    def __gt__(self, other):
+        return self.distance > other.distance
 
     def generate(self, number):
         """
@@ -24,11 +32,12 @@ class Invid:
         """
         city_pop = -1
         starting_point = -1
+        first_city = True
         for city in self.param_values:
-            if self.first_city:
+            if first_city:
                 starting_point = city
-                self.first_city = False
-            elif not self.first_city and self.distance == 0:
+                first_city = False
+            elif not first_city and self.distance == 0:
                 self.distance += matrix[starting_point, city]
             else:
                 self.distance += matrix[city_pop, city]
@@ -40,8 +49,9 @@ class Invid:
         mutacja przez inwersje
         :return:
         """
-        len_vec_of = random.randint(0, 16)
-        number = random.randint(0, 48-len_vec_of)
+        lenght = len(self.param_values)
+        len_vec_of = random.randint(0, lenght)
+        number = random.randint(0, lenght-len_vec_of)
         vector = self.param_values[number:number+len_vec_of]
         for _ in range(len_vec_of):
             self.param_values.pop(number)
