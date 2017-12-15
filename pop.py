@@ -14,7 +14,7 @@ class Invid:
         Taki ciąg będzie repreztował trasę pomiędzy miastami
         :param number: ilość liczb do wygenerowania
         """
-        self.param_values = random.choices(range(number), k=number)
+        self.param_values = random.sample(range(number), k=number)
 
     def calculate_distance(self, matrix):
         """
@@ -37,8 +37,14 @@ class Invid:
 
     def mutation(self):
         """
-
+        mutacja przez inwersje
         :return:
         """
-        pass
+        len_vec_of = random.randint(0, 16)
+        number = random.randint(0, 48-len_vec_of)
+        vector = self.param_values[number:number+len_vec_of]
+        for _ in range(len_vec_of):
+            self.param_values.pop(number)
+        for item in vector:
+            self.param_values.insert(number, item)
 
