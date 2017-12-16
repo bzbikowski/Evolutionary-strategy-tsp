@@ -20,7 +20,6 @@ from pop import Invid
 class Genetic:
     def __init__(self, path_names, path_xy):
         self.c_names = []
-        self.c_states = []
         self.c_dist = []
         self.dist_matrix = []
         self.refactor_data(path_names, path_xy)
@@ -41,7 +40,6 @@ class Genetic:
                 if parts[0] == '\n':
                     break
                 self.c_names.append(parts[0])
-                self.c_states.append(parts[1][:-1])
         self.c_dist = np.loadtxt(xy_path)
 
     def calc_dist(self, xx, yy):
@@ -99,63 +97,19 @@ class Genetic:
                 print(liczba_pokolen)
             ############################################
             #               KRZYŻOWANIE
-            childrens = []
-            copy_pop = np.copy(populacja)
-            for _ in range(math.floor(len(populacja)/2)):
-                dziecko = []
-                nums = random.sample(range(0, len(copy_pop)), k=2)
-                krzyzowanie = [copy_pop[nums[0]], copy_pop[nums[1]]]
-                copy_pop = np.delete(copy_pop, nums)
-                # wyznacz jednego losowego rodzica
-                start = krzyzowanie[0] if random.random() > 0.5 else krzyzowanie[1]
-                random_city = random.randint(0, lenght-1)
-                param = start.param_values[random_city]
-                # dodaj losowe miasto z jego ścieżki jako pierwszy element
-                dziecko.append(param)
-                for i in range(47):
-                    val1 = krzyzowanie[0].param_values.index(param)
-                    val2 = krzyzowanie[1].param_values.index(param)
-                    min1 = val1 - 1
-                    if min1 < 0:
-                        min1 = lenght - 1  # ostatni element
-                    max1 = val1 + 1
-                    if max1 > lenght - 1:
-                        max1 = 0
-                    min2 = val2 - 1
-                    if min2 < 0:
-                        min2 = lenght - 1
-                    max2 = val2 + 1
-                    if max2 > lenght - 1:
-                        max2 = 0
-                    # sprawdź poprawność
-                    values = [min1, min2, max1, max2]
-                    neigh = [krzyzowanie[0].param_values[min1], krzyzowanie[1].param_values[min2],
-                             krzyzowanie[0].param_values[max1], krzyzowanie[1].param_values[max2]]
-                    dist_vector = [self.dist_matrix[dziecko[i]][j] for j in neigh]
-                    values, dist_vector = (list(x) for x in zip(*sorted(zip(values, dist_vector), key=lambda pair: pair[1])))
-                    found = False
-                    for j in range(len(dist_vector)):
-                        if values[j] not in dziecko:
-                            param = values[j]
-                            dziecko.append(param)
-                            found = True
-                            break
-                    if not found:
-                        # znajdź najbliższe możliwe miasto
-                        search = [j for j in range(lenght) if j not in dziecko]
-                        min = 999999999999999
-                        min_index = -1
-                        for j in search:
-                            if self.dist_matrix[dziecko[i]][j] < min:
-                                min = self.dist_matrix[dziecko[i]][j]
-                                min_index = j
-                        param = min_index
-                        dziecko.append(param)
-                childrens.append(Invid(dziecko))
+            childrens = self.crossover(populacja, lenght)
             for child in childrens:
                 populacja.append(child)
             ############################################
             #                 MUTACJA
+            # childrens = self.new_mutation(populacja)
+            # for child in childrens:
+            #     populacja.append(child)
+            # for inv in populacja:
+            #     inv.calculate_distance(self.dist_matrix)
+            #     if self.min > inv.distance:
+            #         self.min = inv.distance
+            #         self.min_ciag = inv.param_values
             for inv in populacja:
                 if random.random() < mutation:
                     inv.mutation()
@@ -173,6 +127,78 @@ class Genetic:
             ############################################
             liczba_pokolen -= 1
 
+    def crossover(self, populacja, lenght, no_of_parents=5):
+        start = None
+        childrens = []
+        copy_pop = np.copy(populacja)
+        np.random.shuffle(copy_pop)
+        for _ in range(math.floor(len(populacja) / no_of_parents)):
+            dziecko = []
+            nums = random.sample(range(0, len(copy_pop)), k=no_of_parents)
+            krzyzowanie = [copy_pop[nums[i]] for i in range(len(nums))]
+            copy_pop = np.delete(copy_pop, nums)
+            # wyznacz jednego losowego rodzica
+            ruletka = [val for val in np.arange(float(1/no_of_parents), 1, float(1/no_of_parents))]
+            ruletka.append(1)
+            val_rand = random.random()
+            for j in range(len(ruletka)):
+                if val_rand < ruletka[j]:
+                    start = krzyzowanie[j]
+                    break
+            random_city = random.randint(0, lenght - 1)
+            param = start.param_values[random_city]
+            # dodaj losowe miasto z jego ścieżki jako pierwszy element
+            dziecko.append(param)
+            for i in range(lenght - 1):
+                vals = []
+                for j in range(len(krzyzowanie)):
+                    vals.append(krzyzowanie[j].param_values.index(param))
+                values = []
+                for value in vals:
+                    min = value - 1
+                    if min < 0:
+                        min = lenght - 1
+                    values.append(min)
+                    max = value + 1
+                    if max > lenght - 1:
+                        max = 0
+                    values.append(max)
+                neigh = []
+                ind = 0
+                for v in range(0, int(len(values)/2)):
+                    neigh.append(krzyzowanie[v].param_values[values[ind]])  # min
+                    neigh.append(krzyzowanie[v].param_values[values[ind+1]])  # max
+                    ind += 2
+                dist_vector = [self.dist_matrix[dziecko[i]][j] for j in neigh]
+                values, dist_vector = (list(x) for x in
+                                       zip(*sorted(zip(values, dist_vector), key=lambda pair: pair[1])))
+                found = False
+                for j in range(len(dist_vector)):
+                    if values[j] not in dziecko:
+                        param = values[j]
+                        dziecko.append(param)
+                        found = True
+                        break
+                if not found:
+                    # znajdź najbliższe możliwe miasto
+                    search = [j for j in range(lenght) if j not in dziecko]
+                    min = 999999999999999
+                    min_index = -1
+                    for j in search:
+                        if self.dist_matrix[dziecko[i]][j] < min:
+                            min = self.dist_matrix[dziecko[i]][j]
+                            min_index = j
+                    param = min_index
+                    dziecko.append(param)
+            childrens.append(Invid(dziecko))
+        return childrens
+
+    def new_mutation(self, population):
+        pop = random.sample(population, k=250)
+        for i in pop:
+            i.mutation()
+        return pop
+
     def plot_result(self):
         print(self.min)
         plt.figure()
@@ -189,7 +215,13 @@ class Genetic:
 
 
 if __name__ == "__main__":
-    gen = Genetic("data\\city_names.txt", "data\\city_xy.txt")
-    gen.start_algorithm(100, 5000)
-    gen.plot_result()
+    #gen1 = Genetic("data\\city_names.txt", "data\\city_xy.txt")
+    #gen1.start_algorithm(500, 10000)
+    #gen1.plot_result()
 
+    gen2 = Genetic("data\\wg22_name.txt", "data\\wg22_xy.txt")
+    gen2.start_algorithm(500, 10000)
+    gen2.plot_result()
+
+# 35832.9229342
+# 1128.47964321
