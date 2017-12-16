@@ -19,19 +19,25 @@ from pop import Invid
 
 class Genetic:
     def __init__(self, path_names, path_xy):
+        """
+
+        :param path_names:
+        :param path_xy:
+        """
         self.c_names = []
         self.c_dist = []
         self.dist_matrix = []
+        self.time_matrix = []
+        self.cost_matrix = []
         self.refactor_data(path_names, path_xy)
         self.calc_dist_matrix()
 
     def refactor_data(self, names_path, xy_path):
         """
-        Wczytywanie z pliku nazw miast, które wykorzystujemy w tym projekcie
-        Wczytaj z pliku współrzędne każdego miasta na mapie geograficnzej
+        Wczytywanie z pliku współrzędne każdego miasta oraaz ich nazw miast, które wykorzystujemy w tym projekcie
 
-        :return: city_names - lista nazwm miast
-                 data - macierz dwukolumnowa, która dla każdego miasta przechowuje punkt współrzędnych x i y
+        :return: c_names - lista nazwm miast
+                 c_dist - macierz dwukolumnowa, która dla każdego miasta przechowuje punkt współrzędnych x i y
         """
         with open(names_path, 'r') as file:
             lines = file.readlines()
@@ -41,6 +47,12 @@ class Genetic:
                     break
                 self.c_names.append(parts[0])
         self.c_dist = np.loadtxt(xy_path)
+        # macierz czasu podróży
+        # todo stworzyć sztuczną macierz w pliku txt z czasem podróży(zatłoczenie drogi...)
+        self.time_matrix = np.zeros(22, 22)
+        # macierz kosztu po drogach
+        # todo stworzyć sztuczną macierz w pliku txt z kosztem podróży po drogach(autostrada...)
+        self.cost_matrix = np.zeros(22, 22)
 
     def calc_dist(self, xx, yy):
         """
@@ -53,7 +65,7 @@ class Genetic:
         """
         return ((xx[0]-yy[0])**2+(xx[1]-yy[1])**2)**(1/2)
 
-    def calc_dist_matrix(self, break_param=0):
+    def calc_dist_matrix(self, break_param=0.001):
         """
         Wylicz odległości pomiędzy miastami, z uwzględnieniem warunku, że nie wszystkie drogi są przejezdne
 
@@ -62,6 +74,7 @@ class Genetic:
 
         :return: dist_matrix - macierz odległości każdego miasta z każdym miastem
         """
+        # todo znaleźć jakieś lepsze rozwiązanie nieprzejezdnych dróg
         self.dist_matrix = np.zeros((len(self.c_dist), len(self.c_dist)))
         for ind1, item1 in enumerate(self.c_dist):
             for ind2, item2 in enumerate(self.c_dist):
@@ -74,7 +87,7 @@ class Genetic:
                     else:
                         self.dist_matrix[ind1][ind2] = self.calc_dist(item1, item2)
 
-    def start_algorithm(self, start_pop=10, no_of_gen=1000, mutation=0.05):
+    def start_algorithm(self, start_pop=10, no_of_gen=1000, mutation=0.05, no_of_parent=3):
         """
         strategia ewolucyjna narazie tylko dla odległości pomiędzy miastami
         :param mutation:
@@ -97,37 +110,33 @@ class Genetic:
                 print(liczba_pokolen)
             ############################################
             #               KRZYŻOWANIE
-            childrens = self.crossover(populacja, lenght)
+            childrens = self.crossover(populacja, lenght, no_of_parent)
             for child in childrens:
                 populacja.append(child)
             ############################################
             #                 MUTACJA
-            # childrens = self.new_mutation(populacja)
-            # for child in childrens:
-            #     populacja.append(child)
-            # for inv in populacja:
-            #     inv.calculate_distance(self.dist_matrix)
-            #     if self.min > inv.distance:
-            #         self.min = inv.distance
-            #         self.min_ciag = inv.param_values
             for inv in populacja:
                 if random.random() < mutation:
                     inv.mutation()
-                inv.calculate_distance(self.dist_matrix)
-                if self.min > inv.distance:
-                    self.min = inv.distance
+                inv.calculate_value(self.dist_matrix, self.time_matrix)
+                if self.min > inv.value:
+                    self.min = inv.value
                     self.min_ciag = inv.param_values
             ############################################
-            #           SELEKCJA & REDUKCJA
-            # posortuj według dystansu
-            # wyrzuć najgorszych
+            #               SELEKCJA
             populacja.sort(reverse=True)
             for _ in range(len(childrens)):
                 populacja.pop(0)
-            ############################################
             liczba_pokolen -= 1
 
     def crossover(self, populacja, lenght, no_of_parents=5):
+        """
+
+        :param populacja:
+        :param lenght:
+        :param no_of_parents:
+        :return:
+        """
         start = None
         childrens = []
         copy_pop = np.copy(populacja)
@@ -193,13 +202,11 @@ class Genetic:
             childrens.append(Invid(dziecko))
         return childrens
 
-    def new_mutation(self, population):
-        pop = random.sample(population, k=250)
-        for i in pop:
-            i.mutation()
-        return pop
-
     def plot_result(self):
+        """
+
+        :return:
+        """
         print(self.min)
         plt.figure()
         for point in self.c_dist:
@@ -215,12 +222,11 @@ class Genetic:
 
 
 if __name__ == "__main__":
-    #gen1 = Genetic("data\\city_names.txt", "data\\city_xy.txt")
-    #gen1.start_algorithm(500, 10000)
-    #gen1.plot_result()
-
+    # gen1 = Genetic("data\\city_names.txt", "data\\city_xy.txt")
+    # gen1.start_algorithm(500, 10000)
+    # gen1.plot_result()
     gen2 = Genetic("data\\wg22_name.txt", "data\\wg22_xy.txt")
-    gen2.start_algorithm(500, 10000)
+    gen2.start_algorithm(500, 10000, 0.05, 4)
     gen2.plot_result()
 
 # 35832.9229342

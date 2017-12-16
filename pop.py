@@ -9,12 +9,15 @@ class Invid:
             self.param_values = init_state
         self.real_value = 0
         self.distance = 0
+        self.time = 0
+        self.cost = 0
+        self.value = 0
 
     def __lt__(self, other):
-        return self.distance < other.distance
+        return self.value < other.value
 
     def __gt__(self, other):
-        return self.distance > other.distance
+        return self.value > other.value
 
     def generate(self, number):
         """
@@ -24,7 +27,7 @@ class Invid:
         """
         self.param_values = random.sample(range(number), k=number)
 
-    def calculate_distance(self, matrix):
+    def calculate_value(self, d_matrix, t_matrix):
         """
 
         :param matrix:
@@ -38,11 +41,15 @@ class Invid:
                 starting_point = city
                 first_city = False
             elif not first_city and self.distance == 0:
-                self.distance += matrix[starting_point, city]
+                self.distance += d_matrix[starting_point, city]
+                self.time += t_matrix[starting_point, city]
             else:
-                self.distance += matrix[city_pop, city]
+                self.distance += d_matrix[city_pop, city]
+                self.time += t_matrix[city_pop, city]
             city_pop = city
-        self.distance += matrix[city_pop, starting_point]
+        self.distance += d_matrix[city_pop, starting_point]
+        self.time += t_matrix[city_pop, starting_point]
+        self.value = self.distance + self.time
 
     def mutation(self):
         """
