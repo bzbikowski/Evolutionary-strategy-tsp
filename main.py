@@ -49,10 +49,10 @@ class Genetic:
         self.c_dist = np.loadtxt(xy_path)
         # macierz czasu podróży
         # todo stworzyć sztuczną macierz w pliku txt z czasem podróży(zatłoczenie drogi...)
-        self.time_matrix = np.zeros(22, 22)
+        self.time_matrix = np.zeros((22, 22))
         # macierz kosztu po drogach
         # todo stworzyć sztuczną macierz w pliku txt z kosztem podróży po drogach(autostrada...)
-        self.cost_matrix = np.zeros(22, 22)
+        self.cost_matrix = np.zeros((22, 22))
 
     def calc_dist(self, xx, yy):
         """
@@ -101,10 +101,11 @@ class Genetic:
         lenght = len(self.c_dist)
         self.min = 999999999
         self.min_ciag = None
+        # inicjacja populacji
         for i in range(liczba_osobnikow):
             populacja.append(Invid())
             populacja[i].generate(len(self.dist_matrix))
-            populacja[i].calculate_distance(self.dist_matrix)
+            populacja[i].calculate_value(self.dist_matrix, self.time_matrix)
         while liczba_pokolen > 0:
             if liczba_pokolen % 10 == 0:
                 print(liczba_pokolen)
