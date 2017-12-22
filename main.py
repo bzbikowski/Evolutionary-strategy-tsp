@@ -12,7 +12,6 @@ Strategia (µ+λ) - z populacji (µ+λ) wybieramy µ najlepszych osobników, λ 
 '''
 import numpy as np
 import random
-import math
 import matplotlib.pyplot as plt
 from pop import Invid
 
@@ -20,10 +19,11 @@ from pop import Invid
 class Genetic:
     def __init__(self, path_names, path_xy):
         """
-
-        :param path_names:
-        :param path_xy:
+        :param path_names: ścieżka do pliku tekstowego zawierająca nazwy kolejnych miast
+        :param path_xy: ścieżka do pliku z położeniami miast
         """
+        self.starting_generations = 0
+        self.best_results = []
         self.c_names = []
         self.c_dist = []
         self.dist_matrix = []
@@ -65,36 +65,33 @@ class Genetic:
         """
         return ((xx[0]-yy[0])**2+(xx[1]-yy[1])**2)**(1/2)
 
-    def calc_dist_matrix(self, break_param=0.001):
+    def calc_dist_matrix(self):
         """
         Wylicz odległości pomiędzy miastami, z uwzględnieniem warunku, że nie wszystkie drogi są przejezdne
-
-        :param distance: macierz zawierająca współrzędne miast
-        :param break_param: współczynnik, który oznacza jak często nie będzie danej drogi pomiędzy miastami
-
-        :return: dist_matrix - macierz odległości każdego miasta z każdym miastem
         """
-        # todo znaleźć jakieś lepsze rozwiązanie nieprzejezdnych dróg
+        # tablica nieprzejezdnych dróg, możemy dowolnie modyfikować
+        blocked = [[1, 2]]
         self.dist_matrix = np.zeros((len(self.c_dist), len(self.c_dist)))
         for ind1, item1 in enumerate(self.c_dist):
             for ind2, item2 in enumerate(self.c_dist):
                 if ind1 == ind2:
                     self.dist_matrix[ind1][ind2] = 0
                 else:
-                    val = random.random()
-                    if val < break_param:
-                        self.dist_matrix[ind1][ind2] = 99999999999999
-                    else:
-                        self.dist_matrix[ind1][ind2] = self.calc_dist(item1, item2)
+                    self.dist_matrix[ind1][ind2] = self.calc_dist(item1, item2)
+        for path in blocked:
+            self.dist_matrix[path[0]][path[1]] = 9999999
+            self.dist_matrix[path[1]][path[0]] = 9999999
 
-    def start_algorithm(self, start_pop=10, no_of_gen=1000, mutation=0.05, no_of_parent=3):
+    def start_algorithm(self, start_pop=10, no_of_gen=1000, mutation=0.5, no_of_parent=3):
         """
-        strategia ewolucyjna narazie tylko dla odległości pomiędzy miastami
-        :param mutation:
-        :param start_pop:
-        :param no_of_gen:
-        :return:
+        strategia ewolucyjna uwzględniająca(w jakimś stopniu) położenie miast, czas podróży oraz koszty
+
+        :param no_of_parent: ile osobników wynierzemy do krzyżowania aby wyznaczyć jednego potomka
+        :param mutation: prawdopodobieństwo wystąpienia mutacji
+        :param start_pop: ilość osobników w każdym pokoleniu, nasze µ
+        :param no_of_gen: maksymalna ilość pokoleń w algorytmie
         """
+        self.starting_generations = no_of_gen
         liczba_osobnikow = start_pop
         liczba_pokolen = no_of_gen
         populacja = []
@@ -108,18 +105,17 @@ class Genetic:
             populacja[i].calculate_value(self.dist_matrix, self.time_matrix)
         while liczba_pokolen > 0:
             if liczba_pokolen % 10 == 0:
-                print(liczba_pokolen)
+                print("Pokolenie: {}".format(liczba_pokolen))
             ############################################
-            #               KRZYŻOWANIE
+            #           KRZYŻOWANIE I MUTACJA
             childrens = self.crossover(populacja, lenght, no_of_parent)
             for child in childrens:
+                if random.random() < mutation:
+                    child.mutation()
+                child.calculate_value(self.dist_matrix, self.time_matrix)
                 populacja.append(child)
             ############################################
-            #                 MUTACJA
             for inv in populacja:
-                if random.random() < mutation:
-                    inv.mutation()
-                inv.calculate_value(self.dist_matrix, self.time_matrix)
                 if self.min > inv.value:
                     self.min = inv.value
                     self.min_ciag = inv.param_values
@@ -128,25 +124,28 @@ class Genetic:
             populacja.sort(reverse=True)
             for _ in range(len(childrens)):
                 populacja.pop(0)
+            self.best_results.append(self.min)
             liczba_pokolen -= 1
 
-    def crossover(self, populacja, lenght, no_of_parents=5):
+    def crossover(self, populacja, lenght, no_of_parents=5, multiply=4):
         """
+        krzyżowanie rodziców w celu wyznaczenia potomków
 
-        :param populacja:
-        :param lenght:
-        :param no_of_parents:
-        :return:
+        :param multiply: ile razy więcej potomków musimy wyznaczyć
+        :param populacja: aktualna populacja osobników
+        :param lenght: ilość rozpatrywanych miast
+        :param no_of_parents: z ilu rodziców będzie składał się potomek
         """
+        # todo zastanowić się nad krzyżowaniem, nie uwzględnia innych parametrów, tylko odległość
+        # może PMX albo OX?
         start = None
         childrens = []
-        copy_pop = np.copy(populacja)
-        np.random.shuffle(copy_pop)
-        for _ in range(math.floor(len(populacja) / no_of_parents)):
+        pop_lenght = len(populacja)
+        pop_nums = range(0, pop_lenght)
+        for _ in range(pop_lenght*multiply):
             dziecko = []
-            nums = random.sample(range(0, len(copy_pop)), k=no_of_parents)
-            krzyzowanie = [copy_pop[nums[i]] for i in range(len(nums))]
-            copy_pop = np.delete(copy_pop, nums)
+            nums = random.sample(pop_nums, k=no_of_parents)
+            krzyzowanie = [populacja[nums[i]] for i in range(len(nums))]
             # wyznacz jednego losowego rodzica
             ruletka = [val for val in np.arange(float(1/no_of_parents), 1, float(1/no_of_parents))]
             ruletka.append(1)
@@ -205,30 +204,44 @@ class Genetic:
 
     def plot_result(self):
         """
-
-        :return:
+        narysuj na ekranie wykresy dot.:
+        a) najlepsza znaleziona droga
+        b) minimalna znaleziona odległość na przestrzeni pokoleń
         """
-        print(self.min)
-        plt.figure()
+        fig1 = plt.figure()
+        ax1 = fig1.add_subplot('111')
+        ax1.set_title(str(self.min))
         for point in self.c_dist:
-            plt.plot(point[0], point[1], 'ko')
+            ax1.plot(point[0], point[1], 'ko')
         for i in range(len(self.min_ciag)-1):
             x = [self.c_dist[self.min_ciag[i]][0], self.c_dist[self.min_ciag[i+1]][0]]
             y = [self.c_dist[self.min_ciag[i]][1], self.c_dist[self.min_ciag[i + 1]][1]]
-            plt.plot(x, y, "r-")
+            ax1.plot(x, y, "r-")
         x = [self.c_dist[self.min_ciag[len(self.min_ciag)-1]][0], self.c_dist[self.min_ciag[0]][0]]
         y = [self.c_dist[self.min_ciag[len(self.min_ciag)-1]][1], self.c_dist[self.min_ciag[0]][1]]
-        plt.plot(x, y, "r-")
-        plt.show()
+        ax1.plot(x, y, "r-")
+        fig1.show()
+        fig2 = plt.figure()
+        ax2 = fig2.add_subplot('111')
+        ax2.plot(range(self.starting_generations), self.best_results, '-k')
+        fig2.show()
+
+    def plot_cities(self):
+        """
+        narysuj mapę poglądową problemu
+        """
+        fig = plt.figure()
+        ax = fig.add_subplot("111")
+        for i in range(len(self.c_dist)):
+            ax.plot(self.c_dist[i][0], self.c_dist[i][1], 'ro')
+            ax.text(self.c_dist[i][0]-10, self.c_dist[i][1]-5, "{0}. {1}".format(i, self.c_names[i]))
+        fig.show()
 
 
 if __name__ == "__main__":
-    # gen1 = Genetic("data\\city_names.txt", "data\\city_xy.txt")
-    # gen1.start_algorithm(500, 10000)
-    # gen1.plot_result()
     gen2 = Genetic("data\\wg22_name.txt", "data\\wg22_xy.txt")
-    gen2.start_algorithm(500, 10000, 0.05, 4)
+    gen2.plot_cities()
+    gen2.start_algorithm(750, 2500, 0.5, 2)
     gen2.plot_result()
 
-# 35832.9229342
-# 1128.47964321
+# 1089.39788074

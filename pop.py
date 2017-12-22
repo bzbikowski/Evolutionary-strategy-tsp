@@ -29,9 +29,10 @@ class Invid:
 
     def calculate_value(self, d_matrix, t_matrix):
         """
-
-        :param matrix:
-        :return:
+        wylicz stopień przystosowania osobnika, czyli jego łącznej sumy odległości oraz czasu
+        todo dobrać wagi do tych wartości?
+        :param d_matrix:
+        :param t_matrix:
         """
         city_pop = -1
         starting_point = -1
@@ -53,9 +54,10 @@ class Invid:
 
     def mutation(self):
         """
-        mutacja przez inwersje
-        :return:
+        wykonaj operację mutacji na osobniku
+        aktualnie wybrana jest inwersja
         """
+        # inwersja
         lenght = len(self.param_values)
         len_vec_of = random.randint(0, lenght)
         number = random.randint(0, lenght-len_vec_of)
@@ -64,4 +66,11 @@ class Invid:
             self.param_values.pop(number)
         for item in vector:
             self.param_values.insert(number, item)
+
+        # wstawienie
+        # lenght = len(self.param_values)
+        # rand1 = random.randrange(0, lenght)
+        # rand2 = random.randrange(0, lenght-1)
+        # value = self.param_values.pop(rand1)
+        # self.param_values.insert(rand2, value)
 
