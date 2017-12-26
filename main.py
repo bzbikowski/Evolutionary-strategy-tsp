@@ -22,6 +22,7 @@ class Genetic:
         :param path_names: ścieżka do pliku tekstowego zawierająca nazwy kolejnych miast
         :param path_xy: ścieżka do pliku z położeniami miast
         """
+        blocked = [[1, 2]]
         self.starting_generations = 0
         self.best_results = []
         self.c_names = []
@@ -30,7 +31,7 @@ class Genetic:
         self.time_matrix = []
         self.cost_matrix = []
         self.refactor_data(path_names, path_xy)
-        self.calc_dist_matrix()
+        self.calc_dist_matrix(blocked)
 
     def refactor_data(self, names_path, xy_path):
         """
@@ -65,12 +66,13 @@ class Genetic:
         """
         return ((xx[0]-yy[0])**2+(xx[1]-yy[1])**2)**(1/2)
 
-    def calc_dist_matrix(self):
+    def calc_dist_matrix(self, blocked):
         """
         Wylicz odległości pomiędzy miastami, z uwzględnieniem warunku, że nie wszystkie drogi są przejezdne
+
+        :param blocked: wektor wybranych nieprzejezdnych dróg
         """
         # tablica nieprzejezdnych dróg, możemy dowolnie modyfikować
-        blocked = [[1, 2]]
         self.dist_matrix = np.zeros((len(self.c_dist), len(self.c_dist)))
         for ind1, item1 in enumerate(self.c_dist):
             for ind2, item2 in enumerate(self.c_dist):
@@ -81,6 +83,10 @@ class Genetic:
         for path in blocked:
             self.dist_matrix[path[0]][path[1]] = 9999999
             self.dist_matrix[path[1]][path[0]] = 9999999
+        self.save_dist_matrix("data//wg22_dist.txt")
+
+    def save_dist_matrix(self, pathname):
+        np.savetxt(pathname, self.dist_matrix)
 
     def start_algorithm(self, start_pop=10, no_of_gen=1000, mutation=0.5, no_of_parent=3):
         """
@@ -189,7 +195,6 @@ class Genetic:
                         found = True
                         break
                 if not found:
-                    # znajdź najbliższe możliwe miasto
                     search = [j for j in range(lenght) if j not in dziecko]
                     min = 999999999999999
                     min_index = -1
@@ -234,14 +239,14 @@ class Genetic:
         ax = fig.add_subplot("111")
         for i in range(len(self.c_dist)):
             ax.plot(self.c_dist[i][0], self.c_dist[i][1], 'ro')
-            ax.text(self.c_dist[i][0]-10, self.c_dist[i][1]-5, "{0}. {1}".format(i, self.c_names[i]))
+            ax.text(self.c_dist[i][0]-10, self.c_dist[i][1]-5, "{0}. {1}".format(i+1, self.c_names[i]))
         fig.show()
 
 
 if __name__ == "__main__":
     gen2 = Genetic("data\\wg22_name.txt", "data\\wg22_xy.txt")
     gen2.plot_cities()
-    gen2.start_algorithm(750, 2500, 0.5, 2)
+    gen2.start_algorithm(1000, 2000, 0.7, 4)
     gen2.plot_result()
 
 # 1089.39788074

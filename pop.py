@@ -55,17 +55,16 @@ class Invid:
     def mutation(self):
         """
         wykonaj operację mutacji na osobniku
-        aktualnie wybrana jest inwersja
         """
         # inwersja
-        lenght = len(self.param_values)
-        len_vec_of = random.randint(0, lenght)
-        number = random.randint(0, lenght-len_vec_of)
-        vector = self.param_values[number:number+len_vec_of]
-        for _ in range(len_vec_of):
-            self.param_values.pop(number)
-        for item in vector:
-            self.param_values.insert(number, item)
+        # lenght = len(self.param_values)
+        # len_vec_of = random.randint(0, lenght)
+        # number = random.randint(0, lenght-len_vec_of)
+        # vector = self.param_values[number:number+len_vec_of]
+        # for _ in range(len_vec_of):
+        #     self.param_values.pop(number)
+        # for item in vector:
+        #     self.param_values.insert(number, item)
 
         # wstawienie
         # lenght = len(self.param_values)
@@ -73,4 +72,14 @@ class Invid:
         # rand2 = random.randrange(0, lenght-1)
         # value = self.param_values.pop(rand1)
         # self.param_values.insert(rand2, value)
+
+        # przestawienie
+        lenght = len(self.param_values)
+        len_vec_of = random.randint(0, lenght)
+        number = random.randint(0, lenght - len_vec_of)
+        vector = self.param_values[number:number + len_vec_of]
+        for _ in range(len_vec_of):
+            self.param_values.pop(number)
+        for i, item in enumerate(vector):
+            self.param_values.insert(number+i, item)
 
