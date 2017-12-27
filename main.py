@@ -13,6 +13,7 @@ Strategia (µ+λ) - z populacji (µ+λ) wybieramy µ najlepszych osobników, λ 
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+from collections import deque
 from pop import Invid
 
 
@@ -64,7 +65,7 @@ class Genetic:
 
         :return: rzeczywisty dystans na mapie pomiędzy dwoma miastami
         """
-        return ((xx[0]-yy[0])**2+(xx[1]-yy[1])**2)**(1/2)
+        return ((xx[0] - yy[0]) ** 2 + (xx[1] - yy[1]) ** 2) ** (1 / 2)
 
     def calc_dist_matrix(self, blocked):
         """
@@ -83,7 +84,7 @@ class Genetic:
         for path in blocked:
             self.dist_matrix[path[0]][path[1]] = 9999999
             self.dist_matrix[path[1]][path[0]] = 9999999
-        self.save_dist_matrix("data//wg22_dist.txt")
+        # self.save_dist_matrix("data//wg22_dist.txt")
 
     def save_dist_matrix(self, pathname):
         np.savetxt(pathname, self.dist_matrix)
@@ -114,7 +115,8 @@ class Genetic:
                 print("Pokolenie: {}".format(liczba_pokolen))
             ############################################
             #           KRZYŻOWANIE I MUTACJA
-            childrens = self.crossover(populacja, lenght, no_of_parent)
+            childrens = self.crossover_OX(populacja, lenght)
+            # childrens = self.crossover(populacja, lenght, no_of_parents)
             for child in childrens:
                 if random.random() < mutation:
                     child.mutation()
@@ -136,7 +138,7 @@ class Genetic:
     def crossover(self, populacja, lenght, no_of_parents=5, multiply=4):
         """
         krzyżowanie rodziców w celu wyznaczenia potomków
-
+        NARAZIE NIE UŻYWANY
         :param multiply: ile razy więcej potomków musimy wyznaczyć
         :param populacja: aktualna populacja osobników
         :param lenght: ilość rozpatrywanych miast
@@ -148,12 +150,12 @@ class Genetic:
         childrens = []
         pop_lenght = len(populacja)
         pop_nums = range(0, pop_lenght)
-        for _ in range(pop_lenght*multiply):
+        for _ in range(pop_lenght * multiply):
             dziecko = []
             nums = random.sample(pop_nums, k=no_of_parents)
             krzyzowanie = [populacja[nums[i]] for i in range(len(nums))]
             # wyznacz jednego losowego rodzica
-            ruletka = [val for val in np.arange(float(1/no_of_parents), 1, float(1/no_of_parents))]
+            ruletka = [val for val in np.arange(float(1 / no_of_parents), 1, float(1 / no_of_parents))]
             ruletka.append(1)
             val_rand = random.random()
             for j in range(len(ruletka)):
@@ -180,9 +182,9 @@ class Genetic:
                     values.append(max)
                 neigh = []
                 ind = 0
-                for v in range(0, int(len(values)/2)):
+                for v in range(0, int(len(values) / 2)):
                     neigh.append(krzyzowanie[v].param_values[values[ind]])  # min
-                    neigh.append(krzyzowanie[v].param_values[values[ind+1]])  # max
+                    neigh.append(krzyzowanie[v].param_values[values[ind + 1]])  # max
                     ind += 2
                 dist_vector = [self.dist_matrix[dziecko[i]][j] for j in neigh]
                 values, dist_vector = (list(x) for x in
@@ -207,6 +209,42 @@ class Genetic:
             childrens.append(Invid(dziecko))
         return childrens
 
+    def crossover_OX(self, populacja, lenght, multiply=4):
+        """
+        krzyżowanie rodziców w celu wyznaczenia potomkóm (metoda OX)
+        
+        :param multiply: ile razy więcej potomków musimy wyznaczyć
+        :param populacja: aktualna populacja osobników
+        :param lenght: ilość rozpatrywanych miast
+        :param no_of_parents: z ilu rodziców będzie składał się potomek
+        """
+        childrens = []
+        pop_lenght = len(populacja)
+        pop_nums = range(0, pop_lenght)
+        for _ in range(int(pop_lenght * multiply / 2)):
+            nums = random.sample(pop_nums, k=2)
+            krzyzowanie = [populacja[nums[i]] for i in range(len(nums))]
+            random_nrs = sorted(random.sample(range(1, lenght - 1), k=2))
+            first_middle = krzyzowanie[0].param_values[random_nrs[0]:random_nrs[1]]
+            second_middle = krzyzowanie[1].param_values[random_nrs[0]:random_nrs[1]]
+            dziecko1 = np.copy(first_middle)
+            dziecko2 = np.copy(second_middle)
+            for i in range(lenght):
+                current_index = (random_nrs[1] + i) % lenght
+                value1 = krzyzowanie[1].param_values[current_index]
+                value2 = krzyzowanie[0].param_values[current_index]
+                if value1 not in first_middle:
+                    dziecko1 = np.append(dziecko1, value1)
+                if value2 not in second_middle:
+                    dziecko2 = np.append(dziecko2, value2)
+            dziecko1 = deque(dziecko1)
+            dziecko2 = deque(dziecko2)
+            dziecko1.rotate(random_nrs[0])
+            dziecko2.rotate(random_nrs[0])
+            childrens.append(Invid(list(dziecko1)))
+            childrens.append(Invid(list(dziecko2)))
+        return childrens
+
     def plot_result(self):
         """
         narysuj na ekranie wykresy dot.:
@@ -218,12 +256,12 @@ class Genetic:
         ax1.set_title(str(self.min))
         for point in self.c_dist:
             ax1.plot(point[0], point[1], 'ko')
-        for i in range(len(self.min_ciag)-1):
-            x = [self.c_dist[self.min_ciag[i]][0], self.c_dist[self.min_ciag[i+1]][0]]
+        for i in range(len(self.min_ciag) - 1):
+            x = [self.c_dist[self.min_ciag[i]][0], self.c_dist[self.min_ciag[i + 1]][0]]
             y = [self.c_dist[self.min_ciag[i]][1], self.c_dist[self.min_ciag[i + 1]][1]]
             ax1.plot(x, y, "r-")
-        x = [self.c_dist[self.min_ciag[len(self.min_ciag)-1]][0], self.c_dist[self.min_ciag[0]][0]]
-        y = [self.c_dist[self.min_ciag[len(self.min_ciag)-1]][1], self.c_dist[self.min_ciag[0]][1]]
+        x = [self.c_dist[self.min_ciag[len(self.min_ciag) - 1]][0], self.c_dist[self.min_ciag[0]][0]]
+        y = [self.c_dist[self.min_ciag[len(self.min_ciag) - 1]][1], self.c_dist[self.min_ciag[0]][1]]
         ax1.plot(x, y, "r-")
         fig1.show()
         fig2 = plt.figure()
@@ -239,14 +277,12 @@ class Genetic:
         ax = fig.add_subplot("111")
         for i in range(len(self.c_dist)):
             ax.plot(self.c_dist[i][0], self.c_dist[i][1], 'ro')
-            ax.text(self.c_dist[i][0]-10, self.c_dist[i][1]-5, "{0}. {1}".format(i+1, self.c_names[i]))
+            ax.text(self.c_dist[i][0] - 10, self.c_dist[i][1] - 5, "{0}. {1}".format(i + 1, self.c_names[i]))
         fig.show()
 
 
 if __name__ == "__main__":
     gen2 = Genetic("data\\wg22_name.txt", "data\\wg22_xy.txt")
     gen2.plot_cities()
-    gen2.start_algorithm(1000, 2000, 0.7, 4)
+    gen2.start_algorithm(100, 200, 0.05, 2)
     gen2.plot_result()
-
-# 1089.39788074

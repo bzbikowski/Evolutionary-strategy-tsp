@@ -13,9 +13,6 @@ class Invid:
         self.cost = 0
         self.value = 0
 
-    def __lt__(self, other):
-        return self.value < other.value
-
     def __gt__(self, other):
         return self.value > other.value
 
@@ -56,15 +53,16 @@ class Invid:
         """
         wykonaj operację mutacji na osobniku
         """
+        # zmiana zasięgu mutacji w zależności od jej poprawy przystosowania?
         # inwersja
-        # lenght = len(self.param_values)
-        # len_vec_of = random.randint(0, lenght)
-        # number = random.randint(0, lenght-len_vec_of)
-        # vector = self.param_values[number:number+len_vec_of]
-        # for _ in range(len_vec_of):
-        #     self.param_values.pop(number)
-        # for item in vector:
-        #     self.param_values.insert(number, item)
+        lenght = len(self.param_values)
+        len_vec_of = random.randint(0, lenght)
+        number = random.randint(0, lenght-len_vec_of)
+        vector = self.param_values[number:number+len_vec_of]
+        for _ in range(len_vec_of):
+            self.param_values.pop(number)
+        for item in vector:
+            self.param_values.insert(number, item)
 
         # wstawienie
         # lenght = len(self.param_values)
@@ -74,12 +72,12 @@ class Invid:
         # self.param_values.insert(rand2, value)
 
         # przestawienie
-        lenght = len(self.param_values)
-        len_vec_of = random.randint(0, lenght)
-        number = random.randint(0, lenght - len_vec_of)
-        vector = self.param_values[number:number + len_vec_of]
-        for _ in range(len_vec_of):
-            self.param_values.pop(number)
-        for i, item in enumerate(vector):
-            self.param_values.insert(number+i, item)
+        # lenght = len(self.param_values)
+        # len_vec_of = random.randint(0, lenght)
+        # number = random.randint(0, lenght - len_vec_of)
+        # vector = self.param_values[number:number + len_vec_of]
+        # for _ in range(len_vec_of):
+        #     self.param_values.pop(number)
+        # for i, item in enumerate(vector):
+        #     self.param_values.insert(number+i, item)
 
