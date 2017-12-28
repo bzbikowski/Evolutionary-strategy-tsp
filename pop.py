@@ -1,13 +1,22 @@
 import random
+import math
 
 
 class Invid:
+    """
+    Model osobnika
+    """
     def __init__(self, init_state=None):
+        """
+        :param init_state: dwuelementowa lista zawierająca początkowe wartości
+        """
         if init_state is None:
             self.param_values = []
+            self.odchylenia = []
         else:
-            self.param_values = init_state
+            self.param_values, self.odchylenia = init_state
         self.real_value = 0
+        self.track = []
         self.distance = 0
         self.time = 0
         self.cost = 0
@@ -18,23 +27,29 @@ class Invid:
 
     def generate(self, number):
         """
-        Wygeneruj losowy ciąg liczb cakowitych z zakresu  <0,n>
-        Taki ciąg będzie repreztował trasę pomiędzy miastami
-        :param number: ilość liczb do wygenerowania
+        Wygeneruj ciąg wartości parametrów, ktore są reprezentowane przez liczby rzeczywiste od <-10;10>
+        o podanej długości oraz ciąg odchyleń standardowych o tej samej długości.
+
+        :param number: ilość liczb w wektorach do wygenerowania
         """
-        self.param_values = random.sample(range(number), k=number)
+        self.param_values = [random.random()*20-10 for _ in range(number)]
+        self.odchylenia = [1.0 for _ in range(number)]
 
     def calculate_value(self, d_matrix, t_matrix):
         """
-        wylicz stopień przystosowania osobnika, czyli jego łącznej sumy odległości oraz czasu
-        todo dobrać wagi do tych wartości?
-        :param d_matrix:
-        :param t_matrix:
+        Wyznacz przystosowanie osobnika na podstawie jego wektora parametrów.
+        Składowe wektora są sortowane i ich kolejność wyznacza trase.
+
+        :param d_matrix: macierz odległości
+        :param t_matrix: macierz czasu trwania podróży
         """
+        seq = range(len(self.param_values))
+        _, seq = zip(*sorted(zip(self.param_values, seq)))
+        self.track = seq
         city_pop = -1
         starting_point = -1
         first_city = True
-        for city in self.param_values:
+        for city in seq:
             if first_city:
                 starting_point = city
                 first_city = False
@@ -51,33 +66,16 @@ class Invid:
 
     def mutation(self):
         """
-        wykonaj operację mutacji na osobniku
+        Mutacja wektora parametrów oraz wektora odchyleń osobnika
         """
-        # zmiana zasięgu mutacji w zależności od jej poprawy przystosowania?
-        # inwersja
-        lenght = len(self.param_values)
-        len_vec_of = random.randint(0, lenght)
-        number = random.randint(0, lenght-len_vec_of)
-        vector = self.param_values[number:number+len_vec_of]
-        for _ in range(len_vec_of):
-            self.param_values.pop(number)
-        for item in vector:
-            self.param_values.insert(number, item)
+        n = len(self.param_values)
+        rand1 = random.random()
+        tau = ((2*n**(1/2))**(1/2))**(-1)
+        fi = ((2 * n) ** (1 / 2)) ** (-1)
+        for i in range(n):
+            rand2 = random.random()
+            self.odchylenia[i] *= math.exp(tau*rand1 + fi*rand2)
+            rand3 = random.random()
+            self.param_values[i] += self.odchylenia[i]*rand3
 
-        # wstawienie
-        # lenght = len(self.param_values)
-        # rand1 = random.randrange(0, lenght)
-        # rand2 = random.randrange(0, lenght-1)
-        # value = self.param_values.pop(rand1)
-        # self.param_values.insert(rand2, value)
-
-        # przestawienie
-        # lenght = len(self.param_values)
-        # len_vec_of = random.randint(0, lenght)
-        # number = random.randint(0, lenght - len_vec_of)
-        # vector = self.param_values[number:number + len_vec_of]
-        # for _ in range(len_vec_of):
-        #     self.param_values.pop(number)
-        # for i, item in enumerate(vector):
-        #     self.param_values.insert(number+i, item)
 
