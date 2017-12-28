@@ -35,13 +35,14 @@ class Invid:
         self.param_values = [random.random()*20-10 for _ in range(number)]
         self.odchylenia = [1.0 for _ in range(number)]
 
-    def calculate_value(self, d_matrix, t_matrix):
+    def calculate_value(self, d_matrix, t_matrix, c_matrix):
         """
         Wyznacz przystosowanie osobnika na podstawie jego wektora parametrów.
         Składowe wektora są sortowane i ich kolejność wyznacza trase.
 
         :param d_matrix: macierz odległości
         :param t_matrix: macierz czasu trwania podróży
+        :param c_matrix: macierz kosztów podrózy
         """
         seq = range(len(self.param_values))
         _, seq = zip(*sorted(zip(self.param_values, seq)))
@@ -56,13 +57,16 @@ class Invid:
             elif not first_city and self.distance == 0:
                 self.distance += d_matrix[starting_point, city]
                 self.time += t_matrix[starting_point, city]
+                self.cost += c_matrix[starting_point, city]
             else:
                 self.distance += d_matrix[city_pop, city]
                 self.time += t_matrix[city_pop, city]
+                self.cost += c_matrix[city_pop, city]
             city_pop = city
         self.distance += d_matrix[city_pop, starting_point]
         self.time += t_matrix[city_pop, starting_point]
-        self.value = self.distance + self.time
+        self.cost += c_matrix[city_pop, starting_point]
+        self.value = 0.33*self.distance + 0.33*self.time + 0.33*self.cost
 
     def mutation(self):
         """

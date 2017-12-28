@@ -39,9 +39,9 @@ class Genetic:
                 index += 1
         self.c_dist = np.loadtxt(xy_path)
         # todo stworzyć sztuczną macierz w pliku txt z czasem podróży(zatłoczenie drogi...)
-        self.time_matrix = np.zeros((22, 22))
+        self.time_matrix = np.zeros((15, 15))
         # todo stworzyć sztuczną macierz w pliku txt z kosztem podróży po drogach(autostrada...)
-        self.cost_matrix = np.zeros((22, 22))
+        self.cost_matrix = np.zeros((15, 15))
 
     def calc_dist(self, xx, yy):
         """
@@ -99,7 +99,7 @@ class Genetic:
         for i in range(liczba_osobnikow):
             populacja.append(Invid())
             populacja[i].generate(len(self.dist_matrix))
-            populacja[i].calculate_value(self.dist_matrix, self.time_matrix)
+            populacja[i].calculate_value(self.dist_matrix, self.time_matrix, self.cost_matrix)
         while liczba_pokolen > 0:
             if liczba_pokolen % 10 == 0:
                 print("Pokolenie: {}".format(liczba_pokolen))
@@ -109,7 +109,7 @@ class Genetic:
             for child in childrens:
                 if random.random() < mutation:
                     child.mutation()
-                child.calculate_value(self.dist_matrix, self.time_matrix)
+                child.calculate_value(self.dist_matrix, self.time_matrix, self.cost_matrix)
                 populacja.append(child)
             ############################################
             #           ZNAJDŹ LEPSZEGO OSOBNIKA
