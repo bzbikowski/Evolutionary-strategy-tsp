@@ -8,7 +8,7 @@ class Invid:
     """
     def __init__(self, init_state=None):
         """
-        :param init_state: dwuelementowa lista zawierająca początkowe wartości
+        :param list init_state: dwuelementowa lista zawierająca początkowe wartości
         """
         if init_state is None:
             self.param_values = []
@@ -30,19 +30,19 @@ class Invid:
         Wygeneruj ciąg wartości parametrów, ktore są reprezentowane przez liczby rzeczywiste od <-10;10>
         o podanej długości oraz ciąg odchyleń standardowych o tej samej długości.
 
-        :param number: ilość liczb w wektorach do wygenerowania
+        :param int number: ilość liczb w wektorach do wygenerowania
         """
         self.param_values = [random.random()*20-10 for _ in range(number)]
-        self.odchylenia = [1.0 for _ in range(number)]
+        self.odchylenia = [random.random()*2-1 for _ in range(number)]
 
     def calculate_value(self, d_matrix, t_matrix, c_matrix):
         """
         Wyznacz przystosowanie osobnika na podstawie jego wektora parametrów.
         Składowe wektora są sortowane i ich kolejność wyznacza trase.
 
-        :param d_matrix: macierz odległości
-        :param t_matrix: macierz czasu trwania podróży
-        :param c_matrix: macierz kosztów podrózy
+        :param ndarray d_matrix: macierz odległości
+        :param ndarray t_matrix: macierz czasu trwania podróży
+        :param ndarray c_matrix: macierz kosztów podrózy
         """
         seq = range(len(self.param_values))
         _, seq = zip(*sorted(zip(self.param_values, seq)))
@@ -73,13 +73,13 @@ class Invid:
         Mutacja wektora parametrów oraz wektora odchyleń osobnika
         """
         n = len(self.param_values)
-        rand1 = random.random()
+        rand1 = random.normalvariate(0, 2)
         tau = ((2*n**(1/2))**(1/2))**(-1)
         fi = ((2 * n) ** (1 / 2)) ** (-1)
         for i in range(n):
-            rand2 = random.random()
+            rand2 = random.normalvariate(0, 2)
             self.odchylenia[i] *= math.exp(tau*rand1 + fi*rand2)
-            rand3 = random.random()
+            rand3 = random.normalvariate(0, 2)
             self.param_values[i] += self.odchylenia[i]*rand3
 
 

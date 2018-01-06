@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+import time
 from pop import Invid
 
 
@@ -11,7 +12,9 @@ class Genetic:
     def __init__(self, path_names, path_xy):
         """
         :param path_names: ścieżka do pliku tekstowego zawierająca nazwy kolejnych miast
+        :type path_names: string
         :param path_xy: ścieżka do pliku z położeniami miast
+        :type path_xy: string
         """
         self.best_results = []
         self.c_names = {}
@@ -19,6 +22,9 @@ class Genetic:
         self.dist_matrix = []
         self.time_matrix = []
         self.cost_matrix = []
+        self.start_time = None
+        self.best_time = None
+        self.best_gen = None
         self.load_data(path_names, path_xy)
         # lista zablokowanych dróg
         blocked = [["Aachen", "Saarbruecken"]]
@@ -29,7 +35,9 @@ class Genetic:
         Wczytywanie z pliku współrzędne każdego miasta oraaz ich nazw miast, które wykorzystujemy w tym projekcie
 
         :param names_path: ścieżka do pliku tekstowego zawierająca nazwy kolejnych miast
+        :type names_path: string
         :param xy_path: ścieżka do pliku z położeniami miast
+        :type xy_path: string
         """
         with open(names_path, 'r') as file:
             index = 0
@@ -48,9 +56,12 @@ class Genetic:
         Na podstawie dwóch punktów policz ich odległość Euklidesową
 
         :param xx: współrzędne 1. punktu
+        :type xx: list(shape=[2])
         :param yy: współrzędne 2. punktu
+        :type yy: list(shape=[2])
 
         :return: rzeczywisty dystans na mapie pomiędzy dwoma miastami
+        :type return: float
         """
         return ((xx[0] - yy[0]) ** 2 + (xx[1] - yy[1]) ** 2) ** (1 / 2)
 
@@ -59,6 +70,7 @@ class Genetic:
         Wylicz odległości pomiędzy miastami oraz uwzględnienienie warunku, że nie wszytstkie drogi są przejezdne
 
         :param blocked: wektor wybranych nieprzejezdnych dróg
+        :type blocked: list
         """
         self.dist_matrix = np.zeros((len(self.c_dist), len(self.c_dist)))
         for ind1, item1 in enumerate(self.c_dist):
@@ -79,6 +91,7 @@ class Genetic:
         Zapis do pliku wyliczonej macierzy odległości pomiędzy każdym miastem
 
         :param pathname: ścieżka do zapisu pliku tekstowego
+        :type pathname: string
         """
         np.savetxt(pathname, self.dist_matrix)
 
@@ -86,15 +99,16 @@ class Genetic:
         """
         Algotyrtm strategii ewolucyjnej (µ+λ).
 
-        :param start_pop: początkowa ilość osobników w każdym pokoleniu
-        :param no_of_gen: maksymalna ilość pokoleń w algorytmie
-        :param mutation: prawdopodobieństwo wystąpienia mutacji
+        :param int start_pop: początkowa ilość osobników w każdym pokoleniu
+        :param int no_of_gen: maksymalna ilość pokoleń w algorytmie
+        :param float mutation: prawdopodobieństwo wystąpienia mutacji
         """
         liczba_pokolen = no_of_gen
         liczba_osobnikow = start_pop
         populacja = []
         self.min = 999999999
         self.min_ciag = None
+        self.start_time = time.time()
         # inicjacja populacji
         for i in range(liczba_osobnikow):
             populacja.append(Invid())
@@ -117,6 +131,8 @@ class Genetic:
                 if self.min > inv.value:
                     self.min = inv.value
                     self.min_ciag = inv.track
+                    self.best_time = time.time()
+                    self.best_gen = no_of_gen - liczba_pokolen
             ############################################
             #               SELEKCJA
             populacja.sort(reverse=True)
@@ -128,9 +144,10 @@ class Genetic:
         """
         Operacja krzyżowania arytmetycznego
 
-        :param populacja: obecna populacja w pokoleniu
-        :param multiply: wyznacznik ile razy więcej dzieci ma powstać w stosunku do liczby populacji
-        :return: childrens: pula potomków
+        :param list populacja: obecna populacja w pokoleniu
+        :param int multiply: wyznacznik ile razy więcej dzieci ma powstać w stosunku do liczby populacji
+        :return: pula potomków
+        :type return: list
         """
         childrens = []
         pop_lenght = len(populacja)
@@ -149,7 +166,9 @@ class Genetic:
         a) najlepsza znaleziona droga
         b) minimalna znaleziona odległość na przestrzeni pokoleń
         """
-        print("Najlepsze znalezione rozwiązanie: {}".format(self.min))
+        print("\nNajlepsze znalezione rozwiązanie: {}".format(self.min))
+        print("Znaleziony w {} pokoleniu, potrzebny czas: {}s".format(self.best_gen, self.best_time - self.start_time))
+        print("Całkowity potrzebny czas: {}s".format(time.time() - self.start_time))
         fig1 = plt.figure()
         ax1 = fig1.add_subplot('111')
         ax1.set_title("Najlepsze rozwiązanie")
@@ -192,6 +211,6 @@ class Genetic:
 
 if __name__ == "__main__":
     gen2 = Genetic("data\\wg22_name.txt", "data\\wg22_xy.txt")
-    gen2.plot_cities()
-    gen2.start_algorithm(500, 800, 1)
+    # gen2.plot_cities()
+    gen2.start_algorithm(200, 500, 1)
     gen2.plot_result()
