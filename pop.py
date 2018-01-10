@@ -66,7 +66,9 @@ class Invid:
         self.distance += d_matrix[city_pop, starting_point]
         self.time += t_matrix[city_pop, starting_point]
         self.cost += c_matrix[city_pop, starting_point]
-        self.value = 0.33*self.distance + 0.33*self.time + 0.33*self.cost
+        self.value = 0.77*self.distance + 0.19*self.time + 0.04*self.cost
+        pass
+        # self.value = 0.33*self.distance + 0.33*self.time + 0.33*self.cost
 
     def mutation(self):
         """

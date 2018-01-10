@@ -2,6 +2,7 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 import time
+import os
 from pop import Invid
 
 
@@ -46,9 +47,7 @@ class Genetic:
                 self.c_names[line] = index
                 index += 1
         self.c_dist = np.loadtxt(xy_path)
-        # todo stworzyć sztuczną macierz w pliku txt z czasem podróży(zatłoczenie drogi...)
         self.time_matrix = np.zeros((15, 15))
-        # todo stworzyć sztuczną macierz w pliku txt z kosztem podróży po drogach(autostrada...)
         self.cost_matrix = np.zeros((15, 15))
 
     def calc_dist(self, xx, yy):
@@ -65,6 +64,20 @@ class Genetic:
         """
         return ((xx[0] - yy[0]) ** 2 + (xx[1] - yy[1]) ** 2) ** (1 / 2)
 
+    def create_time_and_cost_matrixes(self):
+        for i in range(len(self.c_dist)):
+            for j in range(i, len(self.c_dist)):
+                traffic = random.random()
+                autostrada = random.random()
+                if traffic < 0.7:
+                    self.time_matrix[i][j] = self.time_matrix[j][i] = self.dist_matrix[i][j] * 2
+                else:
+                    self.time_matrix[i][j] = self.time_matrix[j][i] = self.dist_matrix[i][j] * 5
+                if autostrada < 0.8:
+                    self.cost_matrix[i][j] = self.cost_matrix[j][i] = self.time_matrix[i][j] * 4
+                else:
+                    self.cost_matrix[i][j] = self.cost_matrix[j][i] = self.time_matrix[i][j] * 6
+
     def calc_dist_matrix(self, blocked):
         """
         Wylicz odległości pomiędzy miastami oraz uwzględnienienie warunku, że nie wszytstkie drogi są przejezdne
@@ -79,33 +92,28 @@ class Genetic:
                     self.dist_matrix[ind1][ind2] = 0
                 else:
                     self.dist_matrix[ind1][ind2] = self.calc_dist(item1, item2)
-        for i in range(len(self.c_dist)):
-            for j in range(len(self.c_dist)):
-                traffic = random.random()
-                autostrada = random.random()
-                if traffic >0.7:
-                    self.time_matrix[i][j] = self.dist_matrix[i][j]*2
-                else:
-                    self.time_matrix[i][j] = self.dist_matrix[i][j]*5
-                if autostrada > 0.8:
-                    self.cost_matrix[i][j] = self.time_matrix[i][j] * 4
-                else:
-                    self.cost_matrix[i][j] = self.time_matrix[i][j] * 6
+        if os.path.isfile("data//wg22_time.txt") and os.path.isfile("data//wg22_cost.txt"):
+            self.time_matrix = np.loadtxt("data//wg22_time.txt")
+            self.cost_matrix = np.loadtxt("data//wg22_cost.txt")
+        else:
+            self.create_time_and_cost_matrixes()
+            self.save_matrixes()
         for path in blocked:
             city1 = self.c_names[path[0]]
             city2 = self.c_names[path[1]]
             self.time_matrix[city1][city2] = 9999999
             self.time_matrix[city2][city1] = 9999999
-        # self.save_dist_matrix("data//wg22_dist.txt")
 
-    def save_dist_matrix(self, pathname):
+    def save_matrixes(self):
         """
         Zapis do pliku wyliczonej macierzy odległości pomiędzy każdym miastem
 
         :param pathname: ścieżka do zapisu pliku tekstowego
         :type pathname: string
         """
-        np.savetxt(pathname, self.dist_matrix)
+        np.savetxt("data//wg22_dist.txt", self.dist_matrix)
+        np.savetxt("data//wg22_time.txt", self.time_matrix)
+        np.savetxt("data//wg22_cost.txt", self.cost_matrix)
 
     def start_algorithm(self, start_pop=10, no_of_gen=1000, mutation=1):
         """
@@ -223,7 +231,7 @@ class Genetic:
 
 if __name__ == "__main__":
     gen2 = Genetic("data\\wg22_name.txt", "data\\wg22_xy.txt")
-    # gen2.plot_cities()
-    gen2.start_algorithm(200, 500, 1)
+    gen2.plot_cities()
+    gen2.start_algorithm(200, 200, 1)
     gen2.plot_result()
     input("Wciśnięcie klawisza kończy działanie programu...")
