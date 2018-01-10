@@ -27,7 +27,7 @@ class Genetic:
         self.best_gen = None
         self.load_data(path_names, path_xy)
         # lista zablokowanych dróg
-        blocked = [["Aachen", "Saarbruecken"]]
+        blocked = [["Koeln", "Saarbruecken"]]
         self.calc_dist_matrix(blocked)
 
     def load_data(self, names_path, xy_path):
@@ -79,6 +79,18 @@ class Genetic:
                     self.dist_matrix[ind1][ind2] = 0
                 else:
                     self.dist_matrix[ind1][ind2] = self.calc_dist(item1, item2)
+        for i in range(len(self.c_dist)):
+            for j in range(len(self.c_dist)):
+                traffic = random.random()
+                autostrada = random.random()
+                if traffic >0.7:
+                    self.time_matrix[i][j] = self.dist_matrix[i][j]*2
+                else:
+                    self.time_matrix[i][j] = self.dist_matrix[i][j]*5
+                if autostrada > 0.8:
+                    self.cost_matrix[i][j] = self.time_matrix[i][j] * 4
+                else:
+                    self.cost_matrix[i][j] = self.time_matrix[i][j] * 6
         for path in blocked:
             city1 = self.c_names[path[0]]
             city2 = self.c_names[path[1]]
@@ -214,3 +226,4 @@ if __name__ == "__main__":
     # gen2.plot_cities()
     gen2.start_algorithm(200, 500, 1)
     gen2.plot_result()
+    input("Wciśnięcie klawisza kończy działanie programu...")
