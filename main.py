@@ -139,7 +139,7 @@ class Genetic:
                 print("Pokolenie: {}".format(liczba_pokolen))
             ############################################
             #           KRZYŻOWANIE I MUTACJA
-            childrens = self.crossover_arithmetic(populacja)
+            childrens = self.crossover_arithmetic2(populacja)
             for child in childrens:
                 if random.random() < mutation:
                     child.mutation()
@@ -155,14 +155,14 @@ class Genetic:
                     self.best_gen = no_of_gen - liczba_pokolen
             ############################################
             #               SELEKCJA
-            populacja.sort(reverse=True)
-            populacja = populacja[len(childrens):]
+            populacja.sort()
+            populacja = populacja[:liczba_osobnikow]
             self.best_results.append(self.min)
             liczba_pokolen -= 1
 
     def crossover_arithmetic(self, populacja, multiply=4):
         """
-        Operacja krzyżowania arytmetycznego
+        Operacja krzyżowania pośredniego
 
         :param list populacja: obecna populacja w pokoleniu
         :param int multiply: wyznacznik ile razy więcej dzieci ma powstać w stosunku do liczby populacji
@@ -178,6 +178,30 @@ class Genetic:
             new_param = np.divide(np.add(krzyzowanie[0].param_values, krzyzowanie[1].param_values), 2)
             new_odch = np.divide(np.add(krzyzowanie[0].odchylenia, krzyzowanie[1].odchylenia), 2)
             childrens.append(Invid([list(new_param), list(new_odch)]))
+        return childrens
+
+    def crossover_arithmetic2(self, populacja, multiply=4):
+        """
+        Operacja krzyżowania arytmetycznego
+
+        :param list populacja: obecna populacja w pokoleniu
+        :param int multiply: wyznacznik ile razy więcej dzieci ma powstać w stosunku do liczby populacji
+        :return: pula potomków
+        :type return: list
+        """
+        childrens = []
+        pop_lenght = len(populacja)
+        pop_nums = range(0, pop_lenght)
+        for _ in range(int(pop_lenght * multiply / 2)):
+            nums = random.sample(pop_nums, k=2)
+            krzyzowanie = [populacja[nums[i]] for i in range(len(nums))]
+            point = random.randint(0, 15)
+            new_param1 = krzyzowanie[0].param_values[:point] + krzyzowanie[1].param_values[point:]
+            new_param2 = krzyzowanie[1].param_values[:point] + krzyzowanie[0].param_values[point:]
+            new_odch1 = krzyzowanie[0].odchylenia[:point] + krzyzowanie[1].odchylenia[point:]
+            new_odch2 = krzyzowanie[1].odchylenia[:point] + krzyzowanie[0].odchylenia[point:]
+            childrens.append(Invid([new_param1, new_odch1]))
+            childrens.append(Invid([new_param2, new_odch2]))
         return childrens
 
     def plot_result(self):

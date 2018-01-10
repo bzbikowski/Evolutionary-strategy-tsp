@@ -22,8 +22,8 @@ class Invid:
         self.cost = 0
         self.value = 0
 
-    def __gt__(self, other):
-        return self.value > other.value
+    def __lt__(self, other):
+        return self.value < other.value
 
     def generate(self, number):
         """
@@ -67,8 +67,6 @@ class Invid:
         self.time += t_matrix[city_pop, starting_point]
         self.cost += c_matrix[city_pop, starting_point]
         self.value = 0.77*self.distance + 0.19*self.time + 0.04*self.cost
-        pass
-        # self.value = 0.33*self.distance + 0.33*self.time + 0.33*self.cost
 
     def mutation(self):
         """
