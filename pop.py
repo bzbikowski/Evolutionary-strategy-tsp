@@ -66,20 +66,20 @@ class Invid:
         self.distance += d_matrix[city_pop, starting_point]
         self.time += t_matrix[city_pop, starting_point]
         self.cost += c_matrix[city_pop, starting_point]
-        self.value = 0.77*self.distance + 0.19*self.time + 0.04*self.cost
+        self.value = 1*self.distance + 0.0*self.time + 0.0*self.cost
 
     def mutation(self):
         """
         Mutacja wektora parametrów oraz wektora odchyleń osobnika
         """
         n = len(self.param_values)
-        rand1 = random.normalvariate(0, 2)
+        rand1 = random.normalvariate(0, 5)
         tau = ((2*n**(1/2))**(1/2))**(-1)
         fi = ((2 * n) ** (1 / 2)) ** (-1)
         for i in range(n):
-            rand2 = random.normalvariate(0, 2)
+            rand2 = random.normalvariate(0, 5)
             self.odchylenia[i] *= math.exp(tau*rand1 + fi*rand2)
-            rand3 = random.normalvariate(0, 2)
+            rand3 = random.normalvariate(0, 5)
             self.param_values[i] += self.odchylenia[i]*rand3
 
 

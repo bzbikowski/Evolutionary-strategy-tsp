@@ -10,13 +10,7 @@ class Genetic:
     """
     Główna klasa programu
     """
-    def __init__(self, path_names, path_xy):
-        """
-        :param path_names: ścieżka do pliku tekstowego zawierająca nazwy kolejnych miast
-        :type path_names: string
-        :param path_xy: ścieżka do pliku z położeniami miast
-        :type path_xy: string
-        """
+    def __init__(self):
         self.best_results = []
         self.c_names = {}
         self.c_dist = []
@@ -26,29 +20,22 @@ class Genetic:
         self.start_time = None
         self.best_time = None
         self.best_gen = None
-        self.load_data(path_names, path_xy)
-        # lista zablokowanych dróg
-        blocked = [["Koeln", "Saarbruecken"]]
-        self.calc_dist_matrix(blocked)
+        self.size = 100
+        self.load_data()
+        self.generate_towns()
+        self.calc_dist_matrix()
 
-    def load_data(self, names_path, xy_path):
-        """
-        Wczytywanie z pliku współrzędne każdego miasta oraaz ich nazw miast, które wykorzystujemy w tym projekcie
+    def generate_towns(self):
+        while len(self.c_dist) < self.size:
+            x = random.randint(-100, 101)
+            y = random.randint(-100, 101)
+            if [x, y] in self.c_dist:
+                continue
+            self.c_dist.append([x, y])
 
-        :param names_path: ścieżka do pliku tekstowego zawierająca nazwy kolejnych miast
-        :type names_path: string
-        :param xy_path: ścieżka do pliku z położeniami miast
-        :type xy_path: string
-        """
-        with open(names_path, 'r') as file:
-            index = 0
-            lines = file.read().splitlines()
-            for line in lines:
-                self.c_names[line] = index
-                index += 1
-        self.c_dist = np.loadtxt(xy_path)
-        self.time_matrix = np.zeros((15, 15))
-        self.cost_matrix = np.zeros((15, 15))
+    def load_data(self):
+        self.time_matrix = np.zeros((self.size, self.size))
+        self.cost_matrix = np.zeros((self.size, self.size))
 
     def calc_dist(self, xx, yy):
         """
@@ -78,14 +65,11 @@ class Genetic:
                 else:
                     self.cost_matrix[i][j] = self.cost_matrix[j][i] = self.time_matrix[i][j] * 6
 
-    def calc_dist_matrix(self, blocked):
+    def calc_dist_matrix(self):
         """
         Wylicz odległości pomiędzy miastami oraz uwzględnienienie warunku, że nie wszytstkie drogi są przejezdne
-
-        :param blocked: wektor wybranych nieprzejezdnych dróg
-        :type blocked: list
         """
-        self.dist_matrix = np.zeros((len(self.c_dist), len(self.c_dist)))
+        self.dist_matrix = np.zeros((self.size, self.size))
         for ind1, item1 in enumerate(self.c_dist):
             for ind2, item2 in enumerate(self.c_dist):
                 if ind1 == ind2:
@@ -98,11 +82,11 @@ class Genetic:
         else:
             self.create_time_and_cost_matrixes()
             self.save_matrixes()
-        for path in blocked:
-            city1 = self.c_names[path[0]]
-            city2 = self.c_names[path[1]]
-            self.time_matrix[city1][city2] = 9999999
-            self.time_matrix[city2][city1] = 9999999
+        # for path in blocked:
+        #     city1 = self.c_names[path[0]]
+        #     city2 = self.c_names[path[1]]
+        #     self.time_matrix[city1][city2] = 99999999
+        #     self.time_matrix[city2][city1] = 99999999
 
     def save_matrixes(self):
         """
@@ -241,7 +225,6 @@ class Genetic:
         """
         Narysuj mapę poglądową problemu
         """
-        list_of_towns = list(self.c_names.keys())
         fig = plt.figure()
         ax = fig.add_subplot("111")
         ax.set_title("Mapa omawianych miast")
@@ -249,13 +232,13 @@ class Genetic:
         ax.set_ylabel("Współrzędne Y [km]")
         for i in range(len(self.c_dist)):
             ax.plot(self.c_dist[i][0], self.c_dist[i][1], 'ro')
-            ax.text(self.c_dist[i][0] - 10, self.c_dist[i][1] - 10, "{0}. {1}".format(i + 1, list_of_towns[i]))
+            # ax.text(self.c_dist[i][0] - 10, self.c_dist[i][1] - 10, "{0}. {1}".format(i + 1, list_of_towns[i]))
         fig.show()
 
 
 if __name__ == "__main__":
-    gen2 = Genetic("data\\wg22_name.txt", "data\\wg22_xy.txt")
+    gen2 = Genetic()
     gen2.plot_cities()
-    gen2.start_algorithm(200, 200, 1)
+    gen2.start_algorithm(1000, 1000, 1)
     gen2.plot_result()
     input("Wciśnięcie klawisza kończy działanie programu...")
