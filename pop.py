@@ -73,13 +73,15 @@ class Invid:
         Mutacja wektora parametrów oraz wektora odchyleń osobnika
         """
         n = len(self.param_values)
-        rand1 = random.normalvariate(0, 5)
-        tau = ((2*n**(1/2))**(1/2))**(-1)
-        fi = ((2 * n) ** (1 / 2)) ** (-1)
+        rand1 = random.normalvariate(0, 1)
+        tau = 1/((2*n**(1/2))**(1/2))
+        fi = 1/((2 * n) ** (1 / 2))
         for i in range(n):
-            rand2 = random.normalvariate(0, 5)
-            self.odchylenia[i] *= math.exp(tau*rand1 + fi*rand2)
-            rand3 = random.normalvariate(0, 5)
-            self.param_values[i] += self.odchylenia[i]*rand3
+            rand2 = random.normalvariate(0, 1)
+            self.odchylenia[i] *= math.exp(tau*rand2 + fi*rand1)
+            if self.odchylenia[i] < 0.1:
+                self.odchylenia[i] = 0.1
+            rand3 = random.normalvariate(0, self.odchylenia[i])
+            self.param_values[i] += rand3
 
 

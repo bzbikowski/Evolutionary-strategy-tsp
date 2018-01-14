@@ -20,7 +20,7 @@ class Genetic:
         self.start_time = None
         self.best_time = None
         self.best_gen = None
-        self.size = 100
+        self.size = 50
         self.load_data()
         self.generate_towns()
         self.calc_dist_matrix()
@@ -96,8 +96,6 @@ class Genetic:
         :type pathname: string
         """
         np.savetxt("data//wg22_dist.txt", self.dist_matrix)
-        np.savetxt("data//wg22_time.txt", self.time_matrix)
-        np.savetxt("data//wg22_cost.txt", self.cost_matrix)
 
     def start_algorithm(self, start_pop=10, no_of_gen=1000, mutation=1):
         """
@@ -123,10 +121,10 @@ class Genetic:
                 print("Pokolenie: {}".format(liczba_pokolen))
             ############################################
             #           KRZYŻOWANIE I MUTACJA
-            childrens = self.crossover_arithmetic2(populacja)
+
+            childrens = self.crossover_arithmetic(populacja)
             for child in childrens:
-                if random.random() < mutation:
-                    child.mutation()
+                child.mutation()
                 child.calculate_value(self.dist_matrix, self.time_matrix, self.cost_matrix)
                 populacja.append(child)
             ############################################
@@ -144,9 +142,9 @@ class Genetic:
             self.best_results.append(self.min)
             liczba_pokolen -= 1
 
-    def crossover_arithmetic(self, populacja, multiply=4):
+    def crossover_arithmetic(self, populacja, multiply=6):
         """
-        Operacja krzyżowania pośredniego
+        Operacja rekombinacji
 
         :param list populacja: obecna populacja w pokoleniu
         :param int multiply: wyznacznik ile razy więcej dzieci ma powstać w stosunku do liczby populacji
@@ -155,6 +153,7 @@ class Genetic:
         """
         childrens = []
         pop_lenght = len(populacja)
+        random.shuffle(populacja)
         pop_nums = range(0, pop_lenght)
         for _ in range(pop_lenght * multiply):
             nums = random.sample(pop_nums, k=2)
@@ -164,7 +163,7 @@ class Genetic:
             childrens.append(Invid([list(new_param), list(new_odch)]))
         return childrens
 
-    def crossover_arithmetic2(self, populacja, multiply=4):
+    def crossover_arithmetic2(self, populacja, multiply=6):
         """
         Operacja krzyżowania arytmetycznego
 
@@ -239,6 +238,6 @@ class Genetic:
 if __name__ == "__main__":
     gen2 = Genetic()
     gen2.plot_cities()
-    gen2.start_algorithm(1000, 1000, 1)
+    gen2.start_algorithm(100, 500, 1)
     gen2.plot_result()
     input("Wciśnięcie klawisza kończy działanie programu...")
