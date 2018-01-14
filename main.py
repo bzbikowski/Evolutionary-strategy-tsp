@@ -17,25 +17,50 @@ class Genetic:
         self.dist_matrix = []
         self.time_matrix = []
         self.cost_matrix = []
+        self.blocked = []
         self.start_time = None
         self.best_time = None
         self.best_gen = None
         self.size = 100
         self.load_data()
-        self.generate_towns()
+
+    def load_data(self):
+        """
+
+        """
+        with open("data//blockade.txt") as file:
+            for line in file.readlines():
+                index = line.split()
+                self.blocked.append([int(index[0]), int(index[1])])
+        self.dist_matrix = np.zeros((self.size, self.size))
+        if os.path.isfile("data//xy.txt"):
+            self.c_dist = np.loadtxt("data//xy.txt")
+        else:
+            self.generate_towns()
         self.calc_dist_matrix()
+        self.time_matrix = np.zeros((self.size, self.size))
+        self.cost_matrix = np.zeros((self.size, self.size))
+        if os.path.isfile("data//time.txt") and os.path.isfile("data//cost.txt"):
+            self.time_matrix = np.loadtxt("data//time.txt")
+            self.cost_matrix = np.loadtxt("data//cost.txt")
+        else:
+            self.create_time_and_cost_matrixes()
+        # self.save_matrixes()
+        for path in self.blocked:
+            self.time_matrix[path[0]][path[1]] = 99999999
+            self.time_matrix[path[1]][path[0]] = 99999999
 
     def generate_towns(self):
+        """
+
+        """
         while len(self.c_dist) < self.size:
             x = random.randint(-100, 101)
             y = random.randint(-100, 101)
             if [x, y] in self.c_dist:
                 continue
             self.c_dist.append([x, y])
-
-    def load_data(self):
-        self.time_matrix = np.zeros((self.size, self.size))
-        self.cost_matrix = np.zeros((self.size, self.size))
+        np.savetxt("data//xy.txt", self.c_dist)
 
     def calc_dist(self, xx, yy):
         """
@@ -52,6 +77,9 @@ class Genetic:
         return ((xx[0] - yy[0]) ** 2 + (xx[1] - yy[1]) ** 2) ** (1 / 2)
 
     def create_time_and_cost_matrixes(self):
+        """
+        Stwórz macierze czasu oraz kosztów
+        """
         for i in range(len(self.c_dist)):
             for j in range(i, len(self.c_dist)):
                 traffic = random.random()
@@ -67,43 +95,27 @@ class Genetic:
 
     def calc_dist_matrix(self):
         """
-        Wylicz odległości pomiędzy miastami oraz uwzględnienienie warunku, że nie wszytstkie drogi są przejezdne
+        Wylicz odległości pomiędzy miastami
         """
-        self.dist_matrix = np.zeros((self.size, self.size))
         for ind1, item1 in enumerate(self.c_dist):
             for ind2, item2 in enumerate(self.c_dist):
-                if ind1 == ind2:
-                    self.dist_matrix[ind1][ind2] = 0
-                else:
+                if not ind1 == ind2:
                     self.dist_matrix[ind1][ind2] = self.calc_dist(item1, item2)
-        if os.path.isfile("data//wg22_time.txt") and os.path.isfile("data//wg22_cost.txt"):
-            self.time_matrix = np.loadtxt("data//wg22_time.txt")
-            self.cost_matrix = np.loadtxt("data//wg22_cost.txt")
-        else:
-            self.create_time_and_cost_matrixes()
-            self.save_matrixes()
-        # for path in blocked:
-        #     city1 = self.c_names[path[0]]
-        #     city2 = self.c_names[path[1]]
-        #     self.time_matrix[city1][city2] = 99999999
-        #     self.time_matrix[city2][city1] = 99999999
 
     def save_matrixes(self):
         """
-        Zapis do pliku wyliczonej macierzy odległości pomiędzy każdym miastem
-
-        :param pathname: ścieżka do zapisu pliku tekstowego
-        :type pathname: string
+        Zapis do pliku wyliczonej macierzy
         """
-        np.savetxt("data//wg22_dist.txt", self.dist_matrix)
+        np.savetxt("data//dist.txt", self.dist_matrix)
+        np.savetxt("data//time.txt", self.time_matrix)
+        np.savetxt("data//cost.txt", self.cost_matrix)
 
-    def start_algorithm(self, start_pop=10, no_of_gen=1000, mutation=1):
+    def start_algorithm(self, start_pop=10, no_of_gen=1000):
         """
         Algotyrtm strategii ewolucyjnej (µ+λ).
 
         :param int start_pop: początkowa ilość osobników w każdym pokoleniu
         :param int no_of_gen: maksymalna ilość pokoleń w algorytmie
-        :param float mutation: prawdopodobieństwo wystąpienia mutacji
         """
         liczba_pokolen = no_of_gen
         liczba_osobnikow = start_pop
@@ -163,30 +175,6 @@ class Genetic:
             childrens.append(Invid([list(new_param), list(new_odch)]))
         return childrens
 
-    def crossover_arithmetic2(self, populacja, multiply=6):
-        """
-        Operacja krzyżowania arytmetycznego
-
-        :param list populacja: obecna populacja w pokoleniu
-        :param int multiply: wyznacznik ile razy więcej dzieci ma powstać w stosunku do liczby populacji
-        :return: pula potomków
-        :type return: list
-        """
-        childrens = []
-        pop_lenght = len(populacja)
-        pop_nums = range(0, pop_lenght)
-        for _ in range(int(pop_lenght * multiply / 2)):
-            nums = random.sample(pop_nums, k=2)
-            krzyzowanie = [populacja[nums[i]] for i in range(len(nums))]
-            point = random.randint(0, 15)
-            new_param1 = krzyzowanie[0].param_values[:point] + krzyzowanie[1].param_values[point:]
-            new_param2 = krzyzowanie[1].param_values[:point] + krzyzowanie[0].param_values[point:]
-            new_odch1 = krzyzowanie[0].odchylenia[:point] + krzyzowanie[1].odchylenia[point:]
-            new_odch2 = krzyzowanie[1].odchylenia[:point] + krzyzowanie[0].odchylenia[point:]
-            childrens.append(Invid([new_param1, new_odch1]))
-            childrens.append(Invid([new_param2, new_odch2]))
-        return childrens
-
     def plot_result(self):
         """
         Narysuj na ekranie wykresy dot.:\n
@@ -203,6 +191,10 @@ class Genetic:
         ax1.set_ylabel("Współrzędne Y [km]")
         for point in self.c_dist:
             ax1.plot(point[0], point[1], 'ko')
+        for path in self.blocked:
+            x = [self.c_dist[path[0]][0], self.c_dist[path[1]][0]]
+            y = [self.c_dist[path[0]][1], self.c_dist[path[1]][1]]
+            ax1.plot(x, y, "k--")
         for i in range(len(self.min_ciag) - 1):
             x = [self.c_dist[self.min_ciag[i]][0], self.c_dist[self.min_ciag[i + 1]][0]]
             y = [self.c_dist[self.min_ciag[i]][1], self.c_dist[self.min_ciag[i + 1]][1]]
@@ -231,13 +223,15 @@ class Genetic:
         ax.set_ylabel("Współrzędne Y [km]")
         for i in range(len(self.c_dist)):
             ax.plot(self.c_dist[i][0], self.c_dist[i][1], 'ro')
-            # ax.text(self.c_dist[i][0] - 10, self.c_dist[i][1] - 10, "{0}. {1}".format(i + 1, list_of_towns[i]))
+            ax.text(self.c_dist[i][0] - 10, self.c_dist[i][1] - 10, str(i), fontsize=8)
         fig.show()
 
 
 if __name__ == "__main__":
     gen2 = Genetic()
     gen2.plot_cities()
-    gen2.start_algorithm(100, 500, 1)
+    gen2.start_algorithm(100, 1000)
     gen2.plot_result()
     # input("Wciśnięcie klawisza kończy działanie programu...")
+
+# 2713.429480632205
