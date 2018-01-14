@@ -33,7 +33,7 @@ class Invid:
         :param int number: ilość liczb w wektorach do wygenerowania
         """
         self.param_values = [random.random()*20-10 for _ in range(number)]
-        self.odchylenia = [random.random()*2-1 for _ in range(number)]
+        self.odchylenia = [random.random() for _ in range(number)]
 
     def calculate_value(self, d_matrix, t_matrix, c_matrix):
         """

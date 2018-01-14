@@ -20,7 +20,7 @@ class Genetic:
         self.start_time = None
         self.best_time = None
         self.best_gen = None
-        self.size = 50
+        self.size = 100
         self.load_data()
         self.generate_towns()
         self.calc_dist_matrix()
@@ -240,4 +240,4 @@ if __name__ == "__main__":
     gen2.plot_cities()
     gen2.start_algorithm(100, 500, 1)
     gen2.plot_result()
-    input("Wciśnięcie klawisza kończy działanie programu...")
+    # input("Wciśnięcie klawisza kończy działanie programu...")
